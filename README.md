@@ -141,11 +141,5 @@ GitHub Pages hosts the static frontend only. The FastAPI backend must remain dep
 
 ---
 
-## 👨‍💻 Author
-
-Mahir Alam
-(University of Calgary)
-
----
 
 ⭐ Star the repo if you found it useful!
