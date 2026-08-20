@@ -148,9 +148,25 @@ React/Vite → Express.js → MongoDB + OpenAI API
 
 ## 📌 Notes
 
-* If `OPENAI_API_KEY` is missing, the analyzer endpoint returns an error instead of trying to guess.
-* The API accepts pasted text and uploaded PDF files.
-* The frontend should point to the backend via `VITE_API_BASE_URL`.
+* Without `OPENAI_API_KEY`, the analyzer uses local keyword and structure analysis for offline functionality.
+* The API accepts pasted text, uploaded PDF files, and DOCX files.
+* The frontend connects to the backend via `VITE_API_BASE_URL` environment variable.
+* Install the optional spaCy model for entity-aware NLP features: `python -m spacy download en_core_web_sm`.
+
+## 🌐 Publish on GitHub Pages
+
+1. Create a GitHub repository and push this project to the `main` branch.
+2. Deploy the `backend` folder as a Render Web Service with:
+
+  ```text
+  Build command: npm install
+  Start command: node index.js
+  ```
+
+3. Set the MongoDB URI and JWT secret as environment variables on Render.
+4. Copy the Render service URL and update `VITE_API_BASE_URL` in your `.env` file.
+5. Deploy the `client` folder to GitHub Pages using the included workflow.
+6. In GitHub, open **Settings > Pages** and set the source to **GitHub Actions**.
 
 ---
 
