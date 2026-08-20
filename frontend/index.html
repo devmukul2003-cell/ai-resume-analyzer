@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="AI-powered resume and ATS analyzer">
+  <title>Resume Signal | AI Resume Analyzer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar"><a class="brand" href="#analyze"><span class="brand-mark">R</span><span>Resume Signal</span></a><nav><button data-view="analyze">Analyzer</button><button data-view="history">History</button><button id="auth-button" data-view="login">Log in</button></nav></header>
+  <main>
+    <section id="landing" class="hero view"><div class="hero-copy"><p class="eyebrow">CAREER INTELLIGENCE / 01</p><h1>Make your resume say the right thing.</h1><p class="lede">A focused AI review for stronger ATS alignment, clearer impact, and a better shot at the first conversation.</p><button class="primary" data-view="analyze">Analyze a resume <span>↗</span></button></div><div class="signal-card"><div class="signal-top"><span>LIVE SIGNAL</span><strong>8.6<span>/10</span></strong></div><div class="score-ring"><b>86</b><small>ATS READY</small></div><div class="signal-lines"><p><span class="dot mint"></span>Relevant experience <b>Strong</b></p><p><span class="dot yellow"></span>Keyword alignment <b>Needs work</b></p><p><span class="dot red"></span>Impact language <b>Improve</b></p></div></div></section>
+    <section id="analyze" class="view hidden"><div class="section-head"><div><p class="eyebrow">RESUME WORKSPACE / 02</p><h2>Turn a draft into a signal.</h2></div><span class="mode-pill">LOCAL + LLM READY</span></div><div class="workspace"><form id="analyzer-form" class="input-panel"><div class="field-row"><label>Resume label<input name="resumeLabel" placeholder="e.g. SWE Resume v2"></label><label>Target role<input name="jobLabel" placeholder="e.g. Product Engineer"></label></div><label>Resume text<textarea name="resumeText" rows="12" placeholder="Paste your resume here..."></textarea></label><div class="upload"><label class="upload-box"><input id="resume-file" name="resumeFile" type="file" accept=".pdf,.docx"><strong>Drop a PDF or DOCX here</strong><span id="file-name">or click to browse</span></label></div><label>Job description <span class="optional">optional</span><textarea name="jobDescription" rows="7" placeholder="Paste a job description to unlock keyword matching..."></textarea></label><p id="form-error" class="error"></p><button class="primary full" type="submit"><span id="submit-label">Analyze resume</span><span>↗</span></button></form><aside class="result-panel"><div class="result-empty" id="result-empty"><span class="empty-icon">◒</span><h3>Your signal appears here.</h3><p>Submit a resume to see the score, strengths, gaps, and specific next moves.</p></div><div id="result" class="hidden"></div></aside></div></section>
+    <section id="history" class="view hidden"><div class="section-head"><div><p class="eyebrow">SAVED REVIEWS / 03</p><h2>Your analysis history.</h2></div></div><div id="history-list" class="history-list"></div></section>
+    <section id="login" class="view hidden auth-view"><form id="login-form" class="auth-card"><p class="eyebrow">WELCOME BACK</p><h2>Log in to Resume Signal.</h2><label>Email<input name="email" type="email" required></label><label>Password<input name="password" type="password" required></label><p id="login-error" class="error"></p><button class="primary full">Log in <span>↗</span></button><p class="switch-auth">No account? <button type="button" data-view="signup">Create one</button></p></form></section>
+    <section id="signup" class="view hidden auth-view"><form id="signup-form" class="auth-card"><p class="eyebrow">START HERE</p><h2>Build your resume signal.</h2><label>Name<input name="name" required></label><label>Email<input name="email" type="email" required></label><label>Password<input name="password" type="password" minlength="6" required></label><p id="signup-error" class="error"></p><button class="primary full">Create account <span>↗</span></button><p class="switch-auth">Already registered? <button type="button" data-view="login">Log in</button></p></form></section>
+  </main><footer><span>Resume Signal</span><span>Built for thoughtful applications.</span></footer><script src="app.js"></script>
+</body>
+</html>
