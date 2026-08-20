@@ -1,4 +1,4 @@
-const API = window.RESUME_API_URL || 'http://127.0.0.1:8000';
+const API = window.RESUME_API_URL || 'http://127.0.0.1:8001';
 const state = { token: localStorage.getItem('resume_token'), user: JSON.parse(localStorage.getItem('resume_user') || 'null') };
 const $ = (selector) => document.querySelector(selector);
 

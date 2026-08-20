@@ -73,7 +73,7 @@ cd backend
 python -m venv .venv
 .venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
-python -m uvicorn main:app --reload
+python -m uvicorn main:app --host 127.0.0.1 --port 8001
 ```
 
 ### Frontend

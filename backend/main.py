@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Optional
 
 import fitz
+import bcrypt
 from docx import Document
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile
@@ -15,7 +16,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from openai import OpenAI
-from passlib.context import CryptContext
 
 try:
     import spacy
@@ -28,7 +28,6 @@ ROOT = Path(__file__).resolve().parent
 DB_PATH = Path(os.getenv("DATABASE_PATH", ROOT / "resume_analyzer.db"))
 SECRET = os.getenv("JWT_SECRET", "change-this-secret")
 ALGORITHM = "HS256"
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 app = FastAPI(title="AI Resume Analyzer API")
 app.add_middleware(
@@ -47,6 +46,14 @@ def db():
     connection = sqlite3.connect(DB_PATH)
     connection.row_factory = sqlite3.Row
     return connection
+
+
+def hash_password(password: str):
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+
+
+def verify_password(password: str, password_hash: str):
+    return bcrypt.checkpw(password.encode("utf-8"), password_hash.encode("utf-8"))
 
 
 def init_db():
@@ -140,7 +147,7 @@ def signup(name: str = Form(...), email: str = Form(...), password: str = Form(.
         raise HTTPException(400, "Use a valid email and a password of at least 6 characters")
     try:
         with db() as connection:
-            cursor = connection.execute("INSERT INTO users(name,email,password_hash,created_at) VALUES(?,?,?,?)", (name.strip(), email.lower().strip(), pwd_context.hash(password), datetime.now(timezone.utc).isoformat()))
+            cursor = connection.execute("INSERT INTO users(name,email,password_hash,created_at) VALUES(?,?,?,?)", (name.strip(), email.lower().strip(), hash_password(password), datetime.now(timezone.utc).isoformat()))
             user = {"id": cursor.lastrowid, "name": name.strip(), "email": email.lower().strip()}
     except sqlite3.IntegrityError:
         raise HTTPException(400, "An account with this email already exists")
@@ -151,7 +158,7 @@ def signup(name: str = Form(...), email: str = Form(...), password: str = Form(.
 def login(email: str = Form(...), password: str = Form(...)):
     with db() as connection:
         user = connection.execute("SELECT * FROM users WHERE email = ?", (email.lower().strip(),)).fetchone()
-    if not user or not pwd_context.verify(password, user["password_hash"]):
+    if not user or not verify_password(password, user["password_hash"]):
         raise HTTPException(400, "Invalid email or password")
     return {"token": token_for(user["id"]), "user": {"id": user["id"], "name": user["name"], "email": user["email"]}}
 
