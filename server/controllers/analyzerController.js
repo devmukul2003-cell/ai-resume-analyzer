@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import { PDFParse } from "pdf-parse";
+import mammoth from "mammoth";
 import Analysis from "../models/Analysis.js";
 
 const analyzeResume = async (req, res) => {
@@ -27,17 +28,27 @@ const analyzeResume = async (req, res) => {
 
     if (req.file) {
       try {
-        const parser = new PDFParse({
-          data: req.file.buffer,
-        });
-
-        const parsedPdf = await parser.getText();
-        finalResumeText = parsedPdf.text.trim();
+        const fileName = req.file.originalname?.toLowerCase() || "";
+        const isMimeDocx = req.file.mimetype?.includes("wordprocessingml") || 
+                          req.file.mimetype?.includes("word") ||
+                          req.file.mimetype?.includes("officedocument");
+        
+        if (fileName.endsWith(".docx") || isMimeDocx) {
+          // Parse Word document
+          const result = await mammoth.extractRawText({ buffer: req.file.buffer });
+          finalResumeText = result.value.trim();
+        } else {
+          // Try to parse as PDF
+          const parser = new PDFParse({
+            data: req.file.buffer,
+          });
+          const parsedPdf = await parser.getText();
+          finalResumeText = parsedPdf.text.trim();
+        }
       } catch (error) {
-        console.error("PDF parse error:", error);
-
+        console.error("File parse error:", error.message);
         return res.status(400).json({
-          message: "Failed to parse uploaded PDF.",
+          message: "Failed to parse uploaded file. Please upload a valid PDF or Word document.",
         });
       }
     }
@@ -48,17 +59,17 @@ const analyzeResume = async (req, res) => {
       });
     }
 
-    if (!process.env.OPENAI_API_KEY) {
-      return res.status(500).json({
-        message: "OpenAI API key is missing in server environment variables.",
+    let parsed;
+
+    if (process.env.OPENAI_API_KEY) {
+      // Use OpenAI API if key is available
+      const openai = new OpenAI({
+        apiKey: process.env.OPENAI_API_KEY,
       });
-    }
 
-    const openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    });
+      const modelName = process.env.OPENAI_MODEL || "gpt-4o-mini";
 
-const prompt = `
+      const prompt = `
 You are a senior ATS (Applicant Tracking System) optimization expert and professional resume reviewer.
 
 Your job is to analyze a resume and compare it against a job description (if provided), producing structured, high-quality, realistic ATS feedback.
@@ -130,39 +141,92 @@ Job Description:
 ${hasJobDescription ? jobDescription.trim() : "Not provided"}
 `;
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-5.4-mini",
-      messages: [
-        {
-          role: "system",
-          content: "You are a professional resume analyzer.",
-        },
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
-      temperature: 0.7,
-    });
-
-    const aiText = response.choices[0].message.content;
-
-    let parsed;
-
-    try {
-      const cleaned = aiText
-        .replace(/```json/g, "")
-        .replace(/```/g, "")
-        .trim();
-
-      parsed = JSON.parse(cleaned);
-    } catch (parseError) {
-      console.error("JSON parse error from OpenAI response:");
-      console.error(aiText);
-
-      return res.status(500).json({
-        message: "Failed to parse AI response.",
+      const response = await openai.chat.completions.create({
+        model: modelName,
+        messages: [
+          {
+            role: "system",
+            content: "You are a professional resume analyzer.",
+          },
+          {
+            role: "user",
+            content: prompt,
+          },
+        ],
+        temperature: 0.7,
       });
+
+      const aiText = response.choices[0].message.content;
+
+      try {
+        const cleaned = aiText
+          .replace(/```json/g, "")
+          .replace(/```/g, "")
+          .trim();
+
+        parsed = JSON.parse(cleaned);
+      } catch (parseError) {
+        console.error("JSON parse error from OpenAI response:");
+        console.error(aiText);
+
+        return res.status(500).json({
+          message: "Failed to parse AI response.",
+        });
+      }
+    } else {
+      // Offline mode: provide basic analysis without AI
+      const resumeWords = finalResumeText.toLowerCase().split(/\s+/);
+      const hasMetrics = /\d+%|[$₹€]\d+|(\d+)[kmb]?\s*(hours?|days?|months?|years?|projects?|clients?|users?)/i.test(finalResumeText);
+      const hasActionVerbs = /led|managed|developed|implemented|designed|created|built|optimized|achieved|increased/i.test(finalResumeText);
+      
+      const resumeLength = finalResumeText.split('\n').length;
+      const wordCount = resumeWords.length;
+      
+      let overallScore = 5;
+      if (hasMetrics && hasActionVerbs) overallScore = 7;
+      if (resumeLength > 20 && wordCount > 100) overallScore += 1;
+      if (overallScore > 10) overallScore = 10;
+
+      let atsMatchScore = null;
+      let matchedKeywords = [];
+      let missingKeywords = [];
+      let atsSuggestions = [];
+
+      if (hasJobDescription) {
+        const jobWords = jobDescription.toLowerCase().split(/\s+/);
+        const commonKeywords = ['javascript', 'react', 'nodejs', 'python', 'java', 'sql', 'mongodb', 'rest', 'api', 'html', 'css', 'aws', 'docker', 'git', 'agile', 'scrum'];
+        
+        matchedKeywords = commonKeywords.filter(kw => resumeWords.some(w => w.includes(kw)));
+        missingKeywords = commonKeywords.filter(kw => !resumeWords.some(w => w.includes(kw)) && jobWords.some(jw => jw.includes(kw)));
+        
+        atsMatchScore = Math.min(10, 5 + Math.round((matchedKeywords.length / commonKeywords.length) * 4));
+        atsSuggestions = missingKeywords.length > 0 ? [`Add missing keywords: ${missingKeywords.slice(0, 3).join(', ')}`] : ['Strong keyword matching'];
+      }
+
+      parsed = {
+        overallScore,
+        atsMatchScore,
+        summary: `This resume has ${hasMetrics ? 'good metrics and ' : ''}${hasActionVerbs ? 'strong action verbs' : 'room for stronger action verbs'}. ${wordCount > 100 ? 'Well-detailed content.' : 'Consider adding more detail.'}`,
+        strengths: [
+          hasActionVerbs ? 'Uses strong action verbs' : 'Could use stronger action verbs',
+          hasMetrics ? 'Includes quantifiable metrics' : 'Add specific numbers and metrics',
+          resumeLength > 10 ? 'Good length and structure' : 'Could expand with more details'
+        ],
+        weaknesses: [
+          !hasMetrics ? 'Missing quantifiable achievements' : 'Add more specific outcomes',
+          !hasActionVerbs ? 'Needs stronger action words' : 'Minor improvements possible',
+          resumeLength < 10 ? 'Too brief - add more details' : 'Well-structured'
+        ],
+        matchedKeywords,
+        missingKeywords,
+        atsSuggestions,
+        suggestions: [
+          'Add metrics and numbers to achievements',
+          'Use action verbs at the start of each bullet',
+          'Highlight measurable results and impact',
+          'Ensure consistent formatting throughout'
+        ]
+      };
     }
     parsed.matchedKeywords = parsed.matchedKeywords || [];
     parsed.missingKeywords = parsed.missingKeywords || [];

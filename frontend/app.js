@@ -1,4 +1,4 @@
-const API = 'https://ai-resume-analyzer-ifbt.onrender.com';
+
 const state = { token: localStorage.getItem('resume_token'), user: JSON.parse(localStorage.getItem('resume_user') || 'null') };
 const $ = (selector) => document.querySelector(selector);
 

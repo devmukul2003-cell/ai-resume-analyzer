@@ -2,7 +2,8 @@ import { Link } from "react-router-dom";
 import { useState } from "react";
 import AnalysisCard from "../components/AnalysisCard";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const API_BASE_URL = 
+  (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000").replace(/\/$/, "");
 
 function AnalyzerWorkspace({ demoMode = false }) {
   const [resumeText, setResumeText] = useState("");
@@ -266,12 +267,12 @@ function AnalyzerWorkspace({ demoMode = false }) {
 
                 <div className="mt-5 rounded-[28px] border border-slate-300 bg-white/80 p-4">
                   <label className="mb-3 block text-sm font-semibold text-slate-800">
-                    Upload Resume PDF (Optional)
+                    Upload Resume (PDF or Word) - Optional
                   </label>
 
                   <input
                     type="file"
-                    accept=".pdf"
+                    accept=".pdf,.doc,.docx"
                     onChange={(e) => setResumeFile(e.target.files[0] || null)}
                     className="block w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700"
                   />

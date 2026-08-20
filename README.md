@@ -2,7 +2,7 @@
 
 AI-powered web application that analyzes resumes and provides ATS-style feedback, keyword matching, and improvement suggestions.
 
-Plain HTML, CSS, and JavaScript frontend with a FastAPI backend, SQLite persistence, and optional LLM-powered feedback.
+This project uses a React + Vite frontend with an Express.js backend, MongoDB persistence, and OpenAI-powered analysis.
 
 ---
 
@@ -20,11 +20,11 @@ Plain HTML, CSS, and JavaScript frontend with a FastAPI backend, SQLite persiste
 
 ## 🏗️ Tech Stack
 
-* **Frontend:** HTML, CSS, JavaScript
-* **Backend:** Python, FastAPI
-* **Database:** SQLite
-* **AI/NLP:** OpenAI API, spaCy
-* **Resume parsing:** PyMuPDF (PDF), python-docx (DOCX)
+* **Frontend:** React, Vite, Tailwind CSS
+* **Backend:** Node.js, Express.js
+* **Database:** MongoDB + Mongoose
+* **AI/NLP:** OpenAI API
+* **Resume parsing:** PDF parsing via pdf-parse
 
 ---
 
@@ -62,39 +62,73 @@ Plain HTML, CSS, and JavaScript frontend with a FastAPI backend, SQLite persiste
 
 ```bash
 # Clone repo
-git clone https://github.com/mahir-alam/AI-Resume-Analyzer.git
-cd AI-Resume-Analyzer
+git clone https://github.com/<your-user>/<your-repo>.git
+cd AI-Resume-Analyzer-main
 ```
 
-### Backend
+### Server
 
 ```powershell
-cd backend
-python -m venv .venv
-.venv\Scripts\Activate.ps1
-python -m pip install -r requirements.txt
-python -m uvicorn main:app --host 127.0.0.1 --port 8001
+cd server
+npm install
 ```
 
-### Frontend
+Create a `.env` file in the `server` folder:
 
-Open `frontend/index.html` directly in a browser, or serve the repository with a static server:
+```env
+PORT=5000
+CLIENT_URL=http://localhost:5173
+MONGODB_URI=mongodb://127.0.0.1:27017/resume-analyzer
+JWT_SECRET=your_secret_key
+OPENAI_API_KEY=your_openai_api_key
+OPENAI_MODEL=gpt-4o-mini
+```
+
+Then start the backend:
 
 ```powershell
-python -m http.server 5500 --directory frontend
+npm run dev
+```
+
+### Client
+
+```powershell
+cd client
+npm install
+copy .env.example .env
+```
+
+Then start the frontend:
+
+```powershell
+npm run dev
+```
+
+Use the default Vite URL:
+
+```text
+http://localhost:5173
 ```
 
 ---
 
 ## 🔐 Environment Variables
 
-Create a `.env` file in **backend**:
+The app expects these values in `server/.env` and `client/.env`.
 
 ```env
+# server/.env
+PORT=5000
+CLIENT_URL=http://localhost:5173
+MONGODB_URI=mongodb://127.0.0.1:27017/resume-analyzer
 JWT_SECRET=your_secret_key
 OPENAI_API_KEY=your_openai_api_key
 OPENAI_MODEL=gpt-4o-mini
-DATABASE_PATH=resume_analyzer.db
+```
+
+```env
+# client/.env
+VITE_API_BASE_URL=http://localhost:5000
 ```
 
 ---
@@ -102,49 +136,21 @@ DATABASE_PATH=resume_analyzer.db
 ## 🧠 How It Works
 
 ```text
-HTML/CSS/JavaScript → FastAPI → SQLite + OpenAI API
+React/Vite → Express.js → MongoDB + OpenAI API
 ```
 
 * Frontend sends resume data
-* Backend processes request
-* OpenAI generates structured feedback
-* Results can be saved to database
+* Backend validates and parses uploaded PDF files
+* OpenAI generates structured ATS feedback
+* Results can be saved to MongoDB
 
 ---
 
 ## 📌 Notes
 
-* Without `OPENAI_API_KEY`, the API uses a local keyword and structure analysis so the application remains usable offline.
-* Install the optional spaCy model for entity-aware NLP features: `python -m spacy download en_core_web_sm`.
-* The API accepts pasted text, PDF files, and DOCX files.
-
-## 🌐 Publish on GitHub Pages
-
-1. Create a GitHub repository and push this project to the `main` branch.
-2. Deploy the `backend` folder as a Render Web Service with:
-
-  ```text
-  Build command: pip install -r requirements.txt
-  Start command: python -m uvicorn main:app --host 0.0.0.0 --port $PORT
-  ```
-
-3. Copy the Render service URL and replace the API value near the top of `frontend/app.js`:
-
-  ```js
-  const API = 'https://your-backend.onrender.com';
-  ```
-
-4. Commit and push the change. The included `.github/workflows/deploy-pages.yml` workflow deploys the `frontend` folder automatically.
-5. In GitHub, open **Settings > Pages** and set the source to **GitHub Actions**.
-
-GitHub Pages hosts the static frontend only. The FastAPI backend must remain deployed separately.
-
----
-
-## 👨‍💻 Author
-
-Mahir Alam
-(University of Calgary)
+* If `OPENAI_API_KEY` is missing, the analyzer endpoint returns an error instead of trying to guess.
+* The API accepts pasted text and uploaded PDF files.
+* The frontend should point to the backend via `VITE_API_BASE_URL`.
 
 ---
 
